@@ -1,0 +1,18 @@
+version: '3.7'
+
+services:
+  # ...existing code...
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"  # Añade esta línea
+    environment:
+      - DB_HOST=db
+      - DB_NAME=mydb
+      - DB_USER=user
+      - DB_PASSWORD=password
+    networks:
+      - app-network
+    depends_on:
+      - db
+  # ...existing code...

@@ -1,0 +1,16 @@
+FROM node:16
+
+WORKDIR /app
+
+# Copia solo package.json primero
+COPY package.json ./
+
+# Instala dependencias
+RUN npm install
+
+# Copia el resto de los archivos
+COPY . .
+
+EXPOSE 80
+
+CMD ["npm", "start"]
