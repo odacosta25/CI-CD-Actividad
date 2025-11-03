@@ -1,18 +1,31 @@
 # Usamos una imagen base de Python
 FROM python:3.9-slim
 
-# Establecemos el directorio de trabajo
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
-# Instalamos las dependencias
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+# instalar dependencias del sistema necesarias para compilar paquetes Python (psycopg2, etc.)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      build-essential \
+      gcc \
+      libpq-dev \
+      git \
+      curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copiamos el código fuente de la app
-COPY . /app/
+# copiar requirements primero (para usar cache de Docker)
+COPY requirements.txt .
 
-# Exponemos el puerto en el que Flask escuchará
+# instalar dependencias Python
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
+
+# copiar código
+COPY . .
+
 EXPOSE 5000
 
-# Comando para iniciar la aplicación
 CMD ["python", "app/app.py"]

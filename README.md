@@ -1,17 +1,14 @@
-# CI-CD-Actividad
+# Aplicación Web con Docker - CI/CD Activity
 
-Descripción General del Proyecto
-
-Sistema web containerizado utilizando arquitectura de microservicios con:
-```
-- Frontend (Node.js)
-- Backend (Python Flask)
+## Resumen
+Proyecto containerizado que incluye:
+- Frontend (Node.js / Express)
+- Backend (Python / Flask)
 - Nginx como proxy inverso
-- Base de datos PostgreSQL
+- PostgreSQL como base de datos
+
+## Estructura (ejemplo)
 ```
-
-Estructura del Proyecto
-
 CI-CD-Actividad/
 ├── backend/
 │   ├── dockerfile
@@ -26,154 +23,63 @@ CI-CD-Actividad/
 │       └── index.html
 ├── nginx/
 │   └── default.conf
-└── docker-compose.yml
-
-Requisitos
-```
-- Git
-- Docker Engine (20.10.x o superior)
-- Docker Compose V2
-- Node.js 16.x (para desarrollo local)
-- Python 3.9 (para desarrollo local)
+├── docker-compose.yml
+└── README.md
 ```
 
-Configuración
-Configuración del Backend
-```
-# Variables de Entorno
-DB_HOST=db
-DB_NAME=mydb
-DB_USER=user
-DB_PASSWORD=password
-PORT=5000
-```
+## Requisitos
+- Docker Engine (20.10+)
+- Docker Compose V2 (comando `docker compose`)
+- Node.js 16 (opcional para desarrollo)
+- Python 3.9 (opcional para desarrollo)
 
-Configuración del Frontend
-```
-- Puerto interno: 80
-- Puerto expuesto: 8080
-```
+## Variables/Configuración principales
+- PostgreSQL:
+  - DB_HOST=db
+  - DB_NAME=mydb
+  - DB_USER=user
+  - DB_PASSWORD=password
+- Backend: escucha en 0.0.0.0:5000
+- Frontend: sirve archivos estáticos en :80 (dentro de contenedor)
+- Nginx enruta `/` al frontend y `/api` al backend (ver `nginx/default.conf`)
 
-Configuración de Nginx
-```
-- Puerto: 80
-- Rutas:
-    - / -> servicio frontend
-    - /api -> servicio backend
-```    
+## Comandos útiles
 
-Configuración de Base de Datos
-```
-- PostgreSQL 13
-- Nombre de BD: mydb
-- Usuario: user
-- Contraseña: password
-- Puerto: 5432
-```    
+# En la raíz del proyecto
+# 1) Bajar servicios anteriores (limpia orphans/volúmenes si hace falta)
+docker compose down --remove-orphans -v
 
+# 2) Construir y levantar en background
+docker compose up --build -d
 
-Instalación rápida
-1. Clonar el repositorio:
-    ```
-    git clone https://github.com/odacosta25/CI-CD-Actividad
-    cd CI-CD-Actividad
-    ```
-2. Levantar servicios con Docker Compose:
-    ```
-    docker-compose up --build -d
-    ```
-3. Abrir en el navegador:
-    ```
-    - Frontend: http://localhost:8080
-    - API proxied: http://localhost/api
-    - Endpoint da datos: http://localhost/api/data
-    ```
-
-4. Detener sercicios:
-    ```
-    docker compose down
-    ```
-Monitoreo
-
-# Ver todos los contenedores
+# 3) Ver estado y contenedores
+docker compose ps
 docker ps
 
-# Ver logs
-docker compose logs
+# 4) Ver logs (en tiempo real)
+docker compose logs -f
+docker compose logs -f backend nginx frontend db
 
-# Ver logs de servicios específicos
-docker compose logs frontend
-docker compose logs backend
-docker compose logs nginx    
-
-Solución de Problemas
-
-1. Verificar estado de servicios:
-    ```
-    docker compose ps
-    ```
-2. Reiniciar servicio específico:
-    ```
-    docker compose restart [nombre_servicio]
-    ```
-3. Verificar redes:
-    ```
-    docker network ls
-    docker network inspect ci-cd-actividad_app-network
-    ```        
-Desarrollo
-
-Dependencias del Backend
-```
-flask==2.1.2
-flask-cors==3.0.10
-psycopg2-binary==2.9.3
-```
-Dependencias del Frontend
-
-{
-  "dependencies": {
-    "express": "^4.18.0"
-  }
-}
-
-Arquitectura de Red
-- Todos los servicios están conectados a través de app-network
-- Nginx actúa como proxy inverso
-- Frontend y Backend se comunican a través de Nginx
-- Backend se conecta directamente a PostgreSQL
-
-Notas de Seguridad
-- Las credenciales de la base de datos deben moverse a variables de entorno
-- CORS está habilitado en el backend para desarrollo
-- Se utilizan puertos por defecto para demostración
-
-Mantenimiento
-- Los datos de la base de datos son persistentes mediante volúmenes de Docker
-- Los logs están disponibles a través de Docker Compose
-- Los servicios pueden escalarse usando Docker Compose
-
-Comandos Utiles
-Gestion de Contenedores
-
-# Iniciar servicios en segundo plano
-docker compose up -d
-
-# Detener y eliminar contenedores
+# 5) Parar y eliminar contenedores
 docker compose down
 
-# Reiniciar todos los servicios
-docker compose restart
+## Verificación / Pruebas rápidas
+# Probar frontend
+curl -i http://localhost/           # o http://localhost:3000 si nginx o compose expone 8080
 
-Logs y Depuración
+# Probar API (ruta proxied por nginx)
+curl -i http://localhost/api/data
 
-# Ver logs en tiempo real
-docker compose logs -f
+# Revisar que backend esté escuchando y accesible dentro de la red:
+docker compose exec backend netstat -tlnp || docker compose logs backend
 
-# Ver logs de un servicio específico
-docker compose logs [servicio]
+## Solución al error "undefined network"
+Asegúrate de que en `docker-compose.yml` exista la sección `networks:` con `app-network` (como el ejemplo anterior). Luego ejecutar:
+docker compose down --remove-orphans -v
+docker compose up --build -d
 
-Gestion de Base de datos
-
-# Conectar a PostgreSQL
-docker compose exec db psql -U user -d mydb
+## Notas y buenas prácticas
+- Poner credenciales reales en variables de entorno o en un archivo .env (no en git).
+- Habilitar CORS en backend para desarrollo (flask-cors).
+- Revisar puertos host vs contenedor (si nginx usa puerto 80 en host puede requerir permisos o conflictos).
+- Si usas `docker-compose` (guion), considera migrar a `docker compose` (sin guion) que es la V2.
